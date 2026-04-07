@@ -14,6 +14,25 @@ st.set_page_config(page_title="Calculadora Solar", layout="centered")
 st.markdown("""
 <style>
 
+/* Botones principales */
+    .stButton > button, .stDownloadButton > button {
+        background-color: white !important;
+        color: #2E7D32  !important;
+        border: 1px solid #2E7D32  !important;
+        border-radius: 10px !important;
+        padding: 0.55rem 1.2rem !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        transition: 0.3s ease-in-out !important;
+        box-shadow: 0 2px 8px rgba(46, 125, 50, 0.15) !important;
+    }
+
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        background-color: #E8F3E6  !important;
+        color: #1B5E20  !important;
+        border: 1px solid #1B5E20 !important;
+    }
+
 /* ====== FONDO PRINCIPAL (AJUSTADO A LA IMAGEN) ====== */
 .stApp {
     background: linear-gradient(
@@ -261,7 +280,7 @@ inversores = {
     "HUAWEI SUN2000-330KTL-H1": 330
 }
 
-tab1, tab2, tab3, tab4 = st.tabs(["🔆 DIMENSIONAMIENTO", "💰 CAPEX", "📈 ROI", "📄 REPORTE" ])
+tab1, tab2, tab3, tab4 = st.tabs(["🔆 DIMENSIONAMIENTO", "💰 CAPEX", "📈 ROI", "📄 COTIZACIÓN" ])
 
 with tab1:
 
@@ -526,10 +545,10 @@ with tab2:
         st.subheader("Parámetros económicos")
 
         # 🔹 Selección operador de red
-
-        chec = st.sidebar.selectbox(
+        chec = st.selectbox(
             "¿Proyecto con CHEC (Operador de Red)?",
-            ["No", "Sí"]
+            ["No", "Sí"],
+            key="chec_operador"
         )
 
         # 🔹 Precio base
@@ -557,6 +576,62 @@ with tab2:
 
         with col3:
             st.metric("💰 CAPEX", f"${capex_total:,.0f}")
+
+        # =========================
+        # MÉTODO DE PAGO
+        # =========================
+        st.markdown("---")
+        st.markdown("## 💰 Método de pago")
+        st.caption("Ajusta los porcentajes que aparecerán en la propuesta comercial.")
+
+        col_pago1, col_pago2 = st.columns(2)
+
+        with col_pago1:
+            pct_contrato = st.number_input(
+                "Firma del contrato (%)",
+                min_value=0,
+                max_value=100,
+                value=30,
+                step=1,
+                key="pct_contrato"
+            )
+
+            pct_pruebas = st.number_input(
+                "Pruebas y puesta en marcha (%)",
+                min_value=0,
+                max_value=100,
+                value=20,
+                step=1,
+                key="pct_pruebas"
+            )
+
+        with col_pago2:
+            pct_inicio = st.number_input(
+                "Inicio de obra (%)",
+                min_value=0,
+                max_value=100,
+                value=30,
+                step=1,
+                key="pct_inicio"
+            )
+
+            pct_legal = st.number_input(
+                "Legalización del sistema (%)",
+                min_value=0,
+                max_value=100,
+                value=20,
+                step=1,
+                key="pct_legal"
+            )
+
+        total_pago = pct_contrato + pct_inicio + pct_pruebas + pct_legal
+
+        st.markdown(f"### Total método de pago: **{total_pago}%**")
+
+        if total_pago != 100:
+            st.warning(f"⚠️ El método de pago suma {total_pago}% y debería sumar 100%.")
+        else:
+            st.success("✅ El método de pago suma correctamente 100%.")           
 
 with tab3:
 
@@ -884,7 +959,7 @@ with tab3:
 ############################################################################################
 with tab4:
 
-    st.header("📄 Datos del cliente para el reporte")
+    st.header("📄 Datos del cliente para la cotización")
 
     cliente_nombre = st.text_input("Nombre del cliente")
     cliente_telefono = st.text_input("Teléfono")
@@ -950,7 +1025,7 @@ def encabezado_y_pie(canvas, doc):
 
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(colors.grey)
-    canvas.drawString(2*cm, 1.5*cm, "Generado por Calculadora Solar Fotovoltaica")
+    canvas.drawString(2*cm, 1.5*cm, "Generado por SOLENERGY 360")
     canvas.drawRightString(width - 2*cm, 1.5*cm, f"Página {doc.page}")
 
     canvas.restoreState()
@@ -974,19 +1049,19 @@ def portada_pdf(canvas, doc, datos):
     canvas.rect(0, 0, width, height, fill=1, stroke=0)
 
     # FRANJAS DECORATIVAS
-    canvas.setFillColor(colors.HexColor("#a5d6a7"))
+    canvas.setFillColor(colors.HexColor("#2e7d32"))
     canvas.rect(0, height - 0.8*cm, width, 0.8*cm, fill=1, stroke=0)
 
     canvas.setFillColor(colors.HexColor("#2e7d32"))
     canvas.rect(0, 0, width, 0.6*cm, fill=1, stroke=0)
 
     # IMÁGENES IZQUIERDA (3)
-    imagenes = ["images/p1.png", "images/p2.jpg", "images/p3.png"]
+    imagenes = ["images/p1.png", "images/p2.jpg", "images/p6.jpg"]
     x_img = 0
-    ancho_img = 8.2*cm
+    ancho_img = 8*cm
     margen = 1*cm
     alto_util = height - (2 * margen)
-    separacion = 0.3*cm
+    separacion = 0.5*cm
     alto_img = (alto_util - 2*separacion) / 3
 
     y_actual = height - margen
@@ -1031,15 +1106,16 @@ def portada_pdf(canvas, doc, datos):
 
     texto_y = height - 8*cm
     intro = [
-        "Te presentamos una propuesta pensada para ti,",
-        "para que tomes la decisión de cambiar tu forma",
-        "de consumir energía y empieces a ahorrar desde ahora.",
+        "     Esta propuesta representa una oportunidad para optimizar",
+        "       tu consumo energético, reducir costos y avanzar hacia",
+        "           una infraestructura más eficiente y sostenible.",
         "",
-        "Con nosotros, no tienes que preocuparte por nada:",
-        "Diseñamos, instalamos y legalizamos todo el sistema por ti.",
+        "      En SOLENERGY 360 integramos análisis técnico, diseño,",
+        "implementación y legalización para brindarte una solución completa",
+        "        adaptada a las necesidades reales de tu proyecto.",
         "",
-        "Lo único que te queda es disfrutar los beneficios",
-        "de una energía limpia, reducir tus gastos y asegurar tu futuro."
+        "     Nuestro propósito es ayudarte a tomar una decisión informada,",
+        "       rentable y respaldada por criterios técnicos y financieros."
     ]
 
     for linea in intro:
@@ -1059,13 +1135,17 @@ def portada_pdf(canvas, doc, datos):
     ]
 
     for etiqueta, valor in datos_cliente:
-        canvas.setFillColor(colors.black)
-        canvas.drawString(9.5*cm, y, etiqueta)
-        canvas.setFont("Helvetica", 11)
-        canvas.setFillColor(colors.HexColor("#1b5e20"))
-        canvas.drawString(12.2*cm, y, str(valor))
-        y -= 0.8*cm
+        # Etiqueta
+        canvas.setFillColor(colors.HexColor("#1B5E20"))  # verde oscuro
         canvas.setFont("Helvetica-Bold", 11)
+        canvas.drawString(9.5*cm, y, etiqueta)
+
+        # Valor
+        canvas.setFillColor(colors.HexColor("#333333"))  # gris oscuro elegante
+        canvas.setFont("Helvetica", 11)
+        canvas.drawString(12.2*cm, y, str(valor))
+
+        y -= 0.8*cm
 
     # POTENCIA
     canvas.setFont("Helvetica-Bold", 12)
@@ -1502,11 +1582,10 @@ def pagina_observaciones_estilo(styles):
     return flowables
 ###########################################################################################
 ###########################################################################################
-
-def pagina_capex_y_pago(styles):
+def pagina_capex_y_pago(styles, datos):
     from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, Image
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    from reportlab.lib.enums import TA_CENTER
     from reportlab.lib import colors
     from reportlab.lib.units import cm
     import os
@@ -1515,7 +1594,6 @@ def pagina_capex_y_pago(styles):
     VERDE_MEDIO  = colors.HexColor("#2E7D32")
     VERDE_SUAVE  = colors.HexColor("#A5D6A7")
     GRIS         = colors.HexColor("#5F6B63")
-    FONDO        = colors.HexColor("#F7FBF8")
 
     # =========================
     # ESTILOS
@@ -1544,30 +1622,33 @@ def pagina_capex_y_pago(styles):
         fontName="Helvetica-Bold",
         fontSize=12,
         textColor=VERDE_OSCURO,
+        leading=13,
     )
 
     estilo_desc = ParagraphStyle(
         "desc_card",
         parent=styles["Normal"],
-        fontSize=10,
+        fontSize=9.5,
         textColor=GRIS,
+        leading=11,
     )
 
     estilo_porcentaje = ParagraphStyle(
         "porcentaje",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=20,
+        fontSize=22,
         alignment=TA_CENTER,
         textColor=VERDE_MEDIO,
+        leading=22,
     )
 
     estilo_validez = ParagraphStyle(
         "validez_propuesta",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=12,
-        leading=12,
+        fontSize=11,
+        leading=13,
         alignment=TA_CENTER,
         textColor=VERDE_OSCURO,
         spaceBefore=8,
@@ -1577,105 +1658,113 @@ def pagina_capex_y_pago(styles):
         "validez_sub",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=12,
-        leading=10,
+        fontSize=10,
+        leading=12,
+        alignment=TA_CENTER,
+        textColor=GRIS,
+    )
+
+    estilo_banco = ParagraphStyle(
+        "banco_texto",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=10,
+        leading=13,
         alignment=TA_CENTER,
         textColor=GRIS,
     )
 
     # =========================
-    # DATA
+    # DATA DINÁMICA
     # =========================
     pagos = [
         {
             "titulo": "Firma del contrato",
-            "desc": "Anticipo",
-            "porcentaje": "30%",
+            "desc": "Anticipo inicial del proyecto",
+            "porcentaje": f"{datos.get('pct_contrato', 30)}%",
             "img": "images/contrato.png"
         },
         {
             "titulo": "Inicio de obra",
-            "desc": "Al iniciar los trabajos",
-            "porcentaje": "30%",
+            "desc": "Al iniciar los trabajos de instalación",
+            "porcentaje": f"{datos.get('pct_inicio', 30)}%",
             "img": "images/inicio.png"
         },
         {
             "titulo": "Pruebas y puesta en marcha",
-            "desc": "Finalización del sistema",
-            "porcentaje": "20%",
+            "desc": "Durante pruebas operativas del sistema",
+            "porcentaje": f"{datos.get('pct_pruebas', 20)}%",
             "img": "images/pruebas.png"
         },
         {
-            "titulo": "Legalización",
-            "desc": "Sistema operando correctamente",
-            "porcentaje": "20%",
+            "titulo": "Legalización del sistema",
+            "desc": "Con el sistema en condiciones óptimas",
+            "porcentaje": f"{datos.get('pct_legal', 20)}%",
             "img": "images/legal.png"
         }
     ]
 
     # =========================
-    # FUNCION TARJETA
+    # TARJETA DE PAGO
     # =========================
     def card_pago(item):
 
-        # Imagen
         if os.path.exists(item["img"]):
-            icono = Image(item["img"], width=2.2*cm, height=2.2*cm)
+            icono = Image(item["img"], width=2.0*cm, height=2.0*cm)
         else:
             icono = Table(
                 [["ICONO"]],
-                colWidths=[2.2*cm],
-                rowHeights=[2.2*cm]
+                colWidths=[2.0*cm],
+                rowHeights=[2.0*cm]
             )
             icono.setStyle(TableStyle([
-                ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#E8F5E9")),
-                ("BOX", (0,0), (-1,-1), 1, VERDE_SUAVE),
-                ("ALIGN", (0,0), (-1,-1), "CENTER"),
-                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#E8F5E9")),
+                ("BOX", (0, 0), (-1, -1), 1, VERDE_SUAVE),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ]))
 
         texto = [
             Paragraph(item["titulo"], estilo_titulo_card),
-            Spacer(1, 2),
+            Spacer(1, 0.08*cm),
             Paragraph(item["desc"], estilo_desc),
-            Spacer(1, 6),
+            Spacer(1, 0.18*cm),
             Paragraph(item["porcentaje"], estilo_porcentaje)
         ]
 
         contenido = Table(
             [[icono, texto]],
-            colWidths=[2.5*cm, 5.5*cm]
+            colWidths=[2.3*cm, 5.5*cm]
         )
 
         contenido.setStyle(TableStyle([
-            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]))
 
-        card = Table([[contenido]], colWidths=[8.2*cm], rowHeights=[3.2*cm])
+        card = Table([[contenido]], colWidths=[8.2*cm], rowHeights=[3.4*cm])
 
         card.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,-1), colors.white),
-            ("BOX", (0,0), (-1,-1), 1, VERDE_SUAVE),
-            ("ROUNDEDCORNERS", [10,10,10,10]),
-            ("LEFTPADDING", (0,0), (-1,-1), 10),
-            ("RIGHTPADDING", (0,0), (-1,-1), 10),
-            ("TOPPADDING", (0,0), (-1,-1), 10),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+            ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+            ("BOX", (0, 0), (-1, -1), 1, VERDE_SUAVE),
+            ("LEFTPADDING", (0, 0), (-1, -1), 10),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+            ("TOPPADDING", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
         ]))
 
         return card
 
     # =========================
-    # LAYOUT
+    # CONTENIDO
     # =========================
     flowables = []
 
-    # espacio superior CAPEX
-    flowables.append(Spacer(1, 7.5*cm))
+    # Reservar mitad superior para tabla CAPEX
+    flowables.append(Spacer(1, 7.3*cm))
 
     flowables.append(Paragraph("MÉTODO DE PAGO", titulo))
-    flowables.append(Paragraph("Distribución de pagos del proyecto", subtitulo))
-    flowables.append(Spacer(1, 6))
+    flowables.append(Paragraph("Distribución de pagos del proyecto fotovoltaico", subtitulo))
+    flowables.append(Spacer(1, 0.2*cm))
 
     fila1 = [card_pago(pagos[0]), card_pago(pagos[1])]
     fila2 = [card_pago(pagos[2]), card_pago(pagos[3])]
@@ -1683,14 +1772,14 @@ def pagina_capex_y_pago(styles):
     tabla = Table(
         [fila1, fila2],
         colWidths=[8.2*cm, 8.2*cm],
-        rowHeights=[3.4*cm, 3.4*cm]
+        rowHeights=[3.5*cm, 3.5*cm]
     )
 
     tabla.setStyle(TableStyle([
-        ("LEFTPADDING", (0,0), (-1,-1), 6),
-        ("RIGHTPADDING", (0,0), (-1,-1), 6),
-        ("TOPPADDING", (0,0), (-1,-1), 6),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
 
     flowables.append(tabla)
@@ -1700,13 +1789,31 @@ def pagina_capex_y_pago(styles):
         "La presente propuesta económica tiene una validez de 30 días calendario",
         estilo_validez
     ))
-
     flowables.append(Paragraph(
         "a partir de su fecha de emisión.",
         estilo_validez_sub
     ))
 
-    
+    flowables.append(Spacer(1, 0.35*cm))
+
+    # =========================
+    # DATOS BANCARIOS
+    # =========================
+    banco_logo = "images/bancolombia.png"
+
+    if os.path.exists(banco_logo):
+        img_banco = Image(banco_logo, width=3.0*cm, height=1.2*cm)
+        img_banco.hAlign = "CENTER"
+        flowables.append(img_banco)
+        flowables.append(Spacer(1, 0.15*cm))
+
+    flowables.append(Paragraph(
+        "Cuenta corriente<br/>"
+        "No. 07001592633<br/>"
+        "A nombre de <b>SOLENERGY 360</b>",
+        estilo_banco
+    ))
+
     return flowables
 ###########################################################################################
 ###########################################################################################
@@ -1849,25 +1956,66 @@ def pagina_analisis_financiero_pdf(styles, datos):
 def generar_graficos_financieros(df_flujo):
     import matplotlib.pyplot as plt
 
-    # ==========================
-    # GRÁFICO 1: FLUJO ACUMULADO
-    # ==========================
+    VERDE_PRINCIPAL = "#2E7D32"
+    VERDE_ACENTO = "#66A93B"
+    VERDE_OSCURO = "#1B5E20"
+    GRIS_SUAVE = "#DDE8D7"
+    GRIS_TEXTO = "#4D4D4D"
+
+    # =========================================
+    # GRÁFICO 1: AHORRO ANUAL PROYECTADO
+    # =========================================
+    ahorro_anual = df_flujo["FLUJO DE CAJA"]
+    ahorro_anual_millones = ahorro_anual / 1_000_000
+
     plt.figure(figsize=(8, 4.5))
-    plt.bar(df_flujo["AÑO"], df_flujo["FLUJO ACUMULADO"])
-    plt.xlabel("Año")
-    plt.ylabel("Flujo acumulado ($)")
+    bars1 = plt.bar(
+        df_flujo["AÑO"],
+        ahorro_anual_millones,
+        color=VERDE_PRINCIPAL,
+        edgecolor=VERDE_OSCURO,
+        linewidth=0.8
+    )
+
+    plt.xlabel("Año", color=GRIS_TEXTO)
+    plt.ylabel("Ahorro anual (M COP)", color=GRIS_TEXTO)
     plt.xticks(df_flujo["AÑO"])
-    plt.axhline(0, linewidth=1)
+    plt.axhline(0, linewidth=1, color=GRIS_SUAVE)
+    plt.title("", fontsize=11, color=VERDE_OSCURO, fontweight="bold")
+    plt.grid(axis="y", linestyle="--", alpha=0.25)
+
+    # Etiquetas encima de cada barra
+    for bar, val in zip(bars1, ahorro_anual_millones):
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.03,
+            f"${val:.2f} M",
+            ha='center',
+            va='bottom',
+            fontsize=7.5,
+            color=VERDE_OSCURO,
+            rotation=0
+        )
+
     plt.tight_layout()
-    plt.savefig("flujo_acumulado.png", dpi=200, bbox_inches="tight")
+    plt.savefig("ahorro_anual.png", dpi=200, bbox_inches="tight")
     plt.close()
 
-    # ==========================
-    # GRÁFICO 2: ROI ACUMULADO
-    # ==========================
+    # =========================================
+    # GRÁFICO 2: RETORNO DE INVERSIÓN ACUMULADO
+    # =========================================
+    flujo_acumulado_millones = df_flujo["FLUJO ACUMULADO"] / 1_000_000
+
     plt.figure(figsize=(8, 4.5))
-    plt.bar(df_flujo["AÑO"], df_flujo["FLUJO ACUMULADO"])
-    plt.axhline(0, linewidth=1.5, linestyle="--")
+    bars2 = plt.bar(
+        df_flujo["AÑO"],
+        flujo_acumulado_millones,
+        color=VERDE_ACENTO,
+        edgecolor=VERDE_OSCURO,
+        linewidth=0.8
+    )
+
+    plt.axhline(0, linewidth=1.2, linestyle="--", color=GRIS_TEXTO)
 
     # Buscar año de recuperación
     año_rec = None
@@ -1877,16 +2025,47 @@ def generar_graficos_financieros(df_flujo):
             break
 
     if año_rec is not None:
-        plt.axvline(año_rec, linewidth=1.5, linestyle="--")
-        plt.text(año_rec, max(df_flujo["FLUJO ACUMULADO"]) * 0.9, f"Payback: Año {año_rec}")
+        plt.axvline(año_rec, linewidth=1.5, linestyle="--", color=VERDE_OSCURO)
+        plt.text(
+            año_rec + 0.15,
+            max(flujo_acumulado_millones) * 0.88,
+            f"Payback: Año {año_rec}",
+            fontsize=9,
+            color=VERDE_OSCURO,
+            fontweight="bold"
+        )
 
-    plt.xlabel("Año")
-    plt.ylabel("Retorno acumulado ($)")
+    plt.xlabel("Año", color=GRIS_TEXTO)
+    plt.ylabel("Retorno acumulado (M COP)", color=GRIS_TEXTO)
     plt.xticks(df_flujo["AÑO"])
+    plt.title("", fontsize=11, color=VERDE_OSCURO, fontweight="bold")
+    plt.grid(axis="y", linestyle="--", alpha=0.25)
+
+    # Etiquetas encima / debajo según valor
+    for bar, val in zip(bars2, flujo_acumulado_millones):
+        if val >= 0:
+            y_pos = bar.get_height() + 0.05
+            va_pos = 'bottom'
+        else:
+            y_pos = bar.get_height() - 0.08
+            va_pos = 'top'
+
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            y_pos,
+            f"${val:.2f} M",
+            ha='center',
+            va=va_pos,
+            fontsize=6.5,
+            color=VERDE_OSCURO,
+            rotation=0
+        )
+
     plt.tight_layout()
     plt.savefig("roi_acumulado.png", dpi=200, bbox_inches="tight")
     plt.close()
-
+############################################################################################
+    ############################################################################################
 def pagina_graficos_financieros_pdf(styles, df_flujo):
     from reportlab.platypus import Paragraph, Spacer, Image
     from reportlab.lib.styles import ParagraphStyle
@@ -1925,7 +2104,7 @@ def pagina_graficos_financieros_pdf(styles, df_flujo):
         fontSize=10,
         leading=12,
         alignment=TA_CENTER,
-        textColor=colors.HexColor("#1B5E20"),
+        textColor=colors.HexColor("#2E7D32"),
         spaceAfter=5,
     )
 
@@ -1933,12 +2112,12 @@ def pagina_graficos_financieros_pdf(styles, df_flujo):
 
     flowables.append(Spacer(1, 0.4*cm))
     flowables.append(Paragraph("COMPORTAMIENTO FINANCIERO DEL PROYECTO", estilo_titulo))
-    flowables.append(Paragraph("Evolución acumulada del flujo de caja y recuperación de la inversión", estilo_subtitulo))
+    flowables.append(Paragraph("omportamiento del ahorro anual y recuperación acumulada de la inversión", estilo_subtitulo))
     flowables.append(Spacer(1, 0.2*cm))
 
     # Gráfico superior
-    flowables.append(Paragraph("Flujo de caja acumulado", estilo_seccion))
-    flowables.append(Image("flujo_acumulado.png", width=15.8*cm, height=7.0*cm))
+    flowables.append(Paragraph("Ahorro anual estimado", estilo_seccion))
+    flowables.append(Image("ahorro_anual.png", width=15.8*cm, height=7.0*cm))
     flowables.append(Spacer(1, 0.35*cm))
 
     # Gráfico inferior
@@ -1949,9 +2128,302 @@ def pagina_graficos_financieros_pdf(styles, df_flujo):
 ###########################################################################################
 ###########################################################################################
 
-# =====================================================
-# GENERADOR PDF
-# =====================================================
+def dibujar_pagina_servicios(canvas, doc):
+    from reportlab.lib import colors
+    from reportlab.lib.colors import HexColor, white
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import Paragraph
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    from reportlab.lib.units import cm
+    import os
+
+    width, height = doc.pagesize
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    IMG = lambda x: os.path.join(BASE_DIR, "images", x)
+
+    VERDE = HexColor("#66A93B")
+    VERDE_OSCURO = HexColor("#1B5E20")
+    NEGRO = HexColor("#222222")
+    GRIS = HexColor("#4D4D4D")
+    GRIS_SUAVE = HexColor("#DDE8D7")
+
+    styles = getSampleStyleSheet()
+
+    # ==========================
+    # ESTILOS
+    # ==========================
+    estilo_titulo = ParagraphStyle(
+        "titulo",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=21,
+        leading=25,
+        textColor=NEGRO,
+        alignment=TA_CENTER,
+    )
+
+    estilo_intro = ParagraphStyle(
+        "intro",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=11,
+        leading=16,
+        textColor=GRIS,
+        alignment=TA_CENTER,
+    )
+
+    estilo_num = ParagraphStyle(
+        "num",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=16,
+        leading=18,
+        textColor=VERDE,
+        alignment=TA_LEFT,
+    )
+
+    estilo_seccion = ParagraphStyle(
+        "seccion",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=15,
+        leading=18,
+        textColor=NEGRO,
+        alignment=TA_LEFT,
+    )
+
+    estilo_texto = ParagraphStyle(
+        "texto",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=10,
+        leading=14,
+        textColor=GRIS,
+        alignment=TA_LEFT,
+    )
+
+    def draw_paragraph(text, style, x, y, w, h):
+        p = Paragraph(text, style)
+        p.wrapOn(canvas, w, h)
+        p.drawOn(canvas, x, y)
+
+    # Fondo
+    canvas.setFillColor(white)
+    canvas.rect(0, 0, width, height, fill=1, stroke=0)
+
+    # FRANJAS DECORATIVAS
+    canvas.setFillColor(colors.HexColor("#2e7d32"))
+    canvas.rect(0, height - 0.8*cm, width, 0.8*cm, fill=1, stroke=0)
+
+    draw_paragraph(
+        "<b>Energía | Ingeniería | Eficiencia | Sostenibilidad | Innovación</b>",
+        ParagraphStyle(
+            "mini_footer",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=7.5,
+            textColor=HexColor("#A5D6A7"),
+            alignment=TA_CENTER,
+        ),
+        2*cm, 2.35*cm, width - 4*cm, 0.4*cm
+    )
+    
+    # ==========================
+    # FRANJA DE ÍCONOS ENERGÍA
+    # ==========================
+    from reportlab.lib.utils import ImageReader
+
+    # Fondo de la franja de iconos
+    canvas.setFillColor(HexColor("#355E3B"))
+    canvas.rect(0,0, width, 1.0*cm, fill=1, stroke=0)
+
+    # Línea superior sutil
+    canvas.setStrokeColor(HexColor("#7CB342"))
+    canvas.setLineWidth(1)
+    canvas.line(0, 2.2*cm, width, 2.2*cm)
+
+    # Lista de íconos (ajusta nombres según tus archivos)
+    iconos = [
+        "icon_rayo2.png",
+        "icon_solar.png",
+        "icon_eolica.png",
+        "icon_planeta.png",
+        "icon_renov.png",
+        "icon_bateria.png",
+        "icon_renov.png",
+        
+    ]
+
+    # Posiciones
+    x_inicio = 1.6*cm
+    separacion = 3.5*cm
+    icon_size = 0.55*cm
+    y_icon = 1.45*cm
+
+    for i, icono in enumerate(iconos):
+        ruta_icono = IMG(icono)
+        if os.path.exists(ruta_icono):
+            try:
+                canvas.drawImage(
+                    ruta_icono,
+                    x_inicio + i * separacion,
+                    y_icon,
+                    width=icon_size,
+                    height=icon_size,
+                    preserveAspectRatio=True,
+                    mask='auto'
+                )
+            except:
+                pass
+
+    # ==========================
+    # TÍTULO
+    # ==========================
+    draw_paragraph(
+        "<b>Soluciones integrales para una infraestructura energética más eficiente y sostenible</b>",
+        estilo_titulo,
+        2*cm, height - 3.8*cm, width - 4*cm, 2*cm
+    )
+
+    # ==========================
+    # TEXTO INTRODUCTORIO
+    # ==========================
+    draw_paragraph(
+        """Somos una empresa especializada en soluciones energéticas, eléctricas e industriales, 
+        orientada al desarrollo de proyectos con altos estándares de calidad, seguridad y desempeño técnico. 
+        Nuestro enfoque está dirigido a la implementación de soluciones confiables, eficientes y sostenibles 
+        para entornos residenciales, comerciales e industriales.""",
+        estilo_intro,
+        2.2*cm, height - 6.5*cm, width - 4.4*cm, 2*cm
+    )
+
+    # Línea divisora
+    canvas.setStrokeColor("#66bb6a")
+    canvas.setLineWidth(1.2)
+    canvas.line(2*cm, height - 6.55*cm, width - 2*cm, height - 6.55*cm)
+
+    # ==========================
+    # COORDENADAS GENERALES
+    # ==========================
+    img_w = 4.5*cm
+    img_h = 3*cm
+
+    text_w = 5.2*cm
+    text_h = 4.6*cm
+
+    fila1_y = height - 9.5*cm
+    fila2_y = height - 21.2*cm
+
+    # Columnas
+    c1 = 1.4*cm
+    c2 = 5.4*cm
+    c3 = 11.1*cm
+    c4 = 15.1*cm
+
+    # ==========================
+    # BLOQUE 1
+    # ==========================
+    try:
+        canvas.drawImage(IMG("r7.jpg"), c1, fila1_y - 1.8*cm, width=img_w, height=img_h+1*cm, preserveAspectRatio=True, mask='auto')
+        canvas.drawImage(IMG("p8.png"), c1, fila1_y - 5.8*cm, width=img_w, height=img_h+2*cm, preserveAspectRatio=True, mask='auto')
+
+    except:
+        pass
+
+    draw_paragraph(
+        "<font color='#66A93B'><b>1.</b></font> <b>Redes eléctricas</b>",
+        estilo_seccion,
+        c2+1*cm, fila1_y + 2*cm , text_w, 0.8*cm
+    )
+
+    draw_paragraph(
+        """Acompañamiento técnico integral en el diseño, construcción, adecuación y mantenimiento de infraestructura eléctrica para proyectos residenciales, comerciales e industriales.<br/><br/>
+        • Redes eléctricas en baja y media tensión.<br/>
+        • Subestaciones y acometidas eléctricas.<br/>
+        • Tableros y canalizaciones.<br/>
+        • Integración con sistemas solares.""",
+        estilo_texto,
+        c2+1*cm, fila1_y - 5.5*cm, text_w, text_h
+    )
+
+    # ==========================
+    # BLOQUE 2
+    # ==========================
+    try:
+        canvas.drawImage(IMG("r6.png"), c3, fila1_y - 1*cm, width=img_w, height=img_h+0.5*cm, preserveAspectRatio=True, mask='auto')
+        canvas.drawImage(IMG("r4.png"), c3, fila1_y - 5*cm, width=img_w, height=img_h+0.5*cm, preserveAspectRatio=True, mask='auto')
+
+    except:
+        pass
+
+    draw_paragraph(
+        "<font color='#66A93B'><b>2.</b></font> <b>Ingeniería</b>",
+        estilo_seccion,
+        c4, fila1_y + 2*cm, text_w, 0.8*cm
+    )
+
+    draw_paragraph(
+        """Desarrollo de soluciones técnicas orientadas al mejoramiento de la eficiencia energética, confiabilidad operativa y sostenibilidad técnica de los proyectos.<br/><br/>
+        • Diseño eléctrico y memorias técnicas.<br/>
+        • Optimización de sistemas eléctricos.<br/>
+        • Estudios de viabilidad energética.<br/>
+        • Ingeniería conceptual y de detalle.""",
+        estilo_texto,
+        c4, fila1_y - 5.5*cm, text_w, text_h
+    )
+
+    # ==========================
+    # BLOQUE 3
+    # ==========================
+    draw_paragraph(
+        "<font color='#66A93B'><b>3.</b></font> <b>Iluminación</b>",
+        estilo_seccion,
+        c1, fila2_y +5.5 *cm, text_w, 0.8*cm
+    )
+
+    draw_paragraph(
+        """Diseño e implementación de soluciones de iluminación técnica y arquitectónica enfocadas en eficiencia energética, confort visual y cumplimiento normativo.<br/><br/>
+        • Iluminación interior y exterior.<br/>
+        • Iluminación vial y urbana.<br/>
+        • Tecnología LED de alto desempeño.<br/>
+        • Proyectos arquitectónicos funcionales.""",
+        estilo_texto,
+        c1, fila2_y - 1.15*cm, text_w, text_h
+    )
+
+    try:
+        canvas.drawImage(IMG("p9.png"), c2 + 1*cm, fila2_y + 2.7*cm, width=img_w, height=img_h, preserveAspectRatio=True, mask='auto')
+        canvas.drawImage(IMG("r8.png"), c2 + 1*cm, fila2_y - 1*cm, width=img_w, height=img_h, preserveAspectRatio=True, mask='auto')
+    except:
+        pass
+
+    # ==========================
+    # BLOQUE 4
+    # ==========================
+    draw_paragraph(
+        "<font color='#66A93B'><b>4.</b></font> <b>Suministro</b>",
+        estilo_seccion,
+        c3, fila2_y + 5.5*cm, text_w, 0.8*cm
+    )
+
+    draw_paragraph(
+        """Suministro especializado de materiales, equipos y componentes eléctricos para proyectos de infraestructura, energía y sistemas fotovoltaicos.<br/><br/>
+        • Materiales eléctricos BT/MT.<br/>
+        • Conductores y protecciones.<br/>
+        • Estructuras y soportes.<br/>
+        • Accesorios electromecánicos.""",
+        estilo_texto,
+        c3, fila2_y+0.2*cm , text_w, text_h
+    )
+    try:
+        canvas.drawImage(IMG("r9.png"), c4 + 1.2*cm, fila2_y +2.7*cm, width=img_w-0.3*cm, height=img_h, preserveAspectRatio=True, mask='auto')
+        canvas.drawImage(IMG("r10.jpg"), c4 + 0.2*cm, fila2_y -3.1*cm, width=img_w+1.5*cm, height=img_h+2*cm, preserveAspectRatio=True, mask='auto')
+    except:
+        pass
+
+###########################################################################################
+###########################################################################################
+
 def generar_pdf_empresa(datos):
     from reportlab.platypus import (
         SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
@@ -1962,7 +2434,7 @@ def generar_pdf_empresa(datos):
     from reportlab.lib.units import cm
 
     doc = SimpleDocTemplate(
-        "reporte_empresa.pdf",
+        "Cotización_cliente.pdf",
         pagesize=letter,
         topMargin=3.5*cm,
         bottomMargin=2.5*cm,
@@ -1977,6 +2449,7 @@ def generar_pdf_empresa(datos):
     # PÁGINA 1 → PORTADA
     # =============================
     content.append(Paragraph(" ", styles["Normal"]))
+
     # =============================
     # PÁGINA 2 → BENEFICIOS
     # =============================
@@ -1993,7 +2466,7 @@ def generar_pdf_empresa(datos):
     # PÁGINA 4 → CAPEX + MÉTODO DE PAGO
     # =============================
     content.append(PageBreak())
-    content.extend(pagina_capex_y_pago(styles))
+    content.extend(pagina_capex_y_pago(styles, datos))
 
     # =============================
     # PÁGINA 5 → ANÁLISIS FINANCIERO
@@ -2005,29 +2478,36 @@ def generar_pdf_empresa(datos):
     # PÁGINA 6 → GRÁFICOS FINANCIEROS
     # =============================
     content.append(PageBreak())
-    content.extend(pagina_graficos_financieros_pdf(styles, datos["df_flujo"]))  
+    content.extend(pagina_graficos_financieros_pdf(styles, datos["df_flujo"]))
+
+    # =============================
+    # PÁGINA 7 → SERVICIOS
+    # =============================
+    content.append(PageBreak())
+    content.append(Spacer(1, 0.1*cm))  # fuerza la existencia de la página
 
     # CALLBACK DE PÁGINAS
     def todas_las_paginas(canvas, doc):
-
         if doc.page == 1:
             portada_pdf(canvas, doc, datos)
+        elif doc.page == 7:
+            dibujar_pagina_servicios(canvas, doc)
         else:
             encabezado_y_pie(canvas, doc)
 
+    # Build del documento
     doc.build(
         content,
         onFirstPage=todas_las_paginas,
         onLaterPages=todas_las_paginas
     )
 
-    return "reporte_empresa.pdf"
-
+    return "Cotización_cliente.pdf"
 
 # =====================================================
 # BOTÓN DESCARGA
 # =====================================================
-if st.button("📄 Generar reporte PRO"):
+if st.button("📄 Generar cotización"):
 
     datos = {
         "cliente_nombre": st.session_state.get("cliente_nombre", ""),
@@ -2036,6 +2516,11 @@ if st.button("📄 Generar reporte PRO"):
         "cliente_ciudad": st.session_state.get("cliente_ciudad", ""),
         "cliente_fecha": st.session_state.get("cliente_fecha", ""),
 
+        "pct_contrato": pct_contrato,
+        "pct_inicio": pct_inicio,
+        "pct_pruebas": pct_pruebas,
+        "pct_legal": pct_legal,
+        
         "potencia": st.session_state.get("potencia_dc", 0),
         "paneles": st.session_state.get("paneles", 0),
         "produccion": st.session_state.get("generacion_anual", 0),
@@ -2062,6 +2547,7 @@ if st.button("📄 Generar reporte PRO"):
         "ahorro_total": st.session_state.get("ahorro_total", 0),
         "n_años": st.session_state.get("n_años", 15),
         "tarifa_ssfv": st.session_state.get("tarifa_ssfv", 0),
+        
     }
 
     pdf = generar_pdf_empresa(datos)
